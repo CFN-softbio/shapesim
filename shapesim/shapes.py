@@ -3,11 +3,9 @@
     They come with a few routines to rotate them etc.
 '''
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.ndimage import gaussian_filter
 
-from .tools.transforms import rotation_matrix
-from .tools.matrices import rotmat3D, rotEuler
+from .tools.matrices import rotmat3D
 from .tools.arrays import mkarray3D
 from .tools.rotate import rotate
 from .tools.tiles import mktilevecs
@@ -17,16 +15,19 @@ class Shape3:
     ''' 3D shape class.
         It is made up of types and units. Types are generators of shapes and
         units are the positions of these shapes.
-        This makes it possible to quickly generate a structure (such as a crystal)
-        of the same shape, while allowing the possibility of constructing a hybrid
-        crystal of different shapes (i.e. spheres of different sizes/density).
+        This makes it possible to quickly generate a structure (such as a
+        crystal) of the same shape, while allowing the possibility of
+        constructing a hybrid crystal of different shapes (i.e. spheres of
+        different sizes/density).
     '''
-    def __init__(self,dims=[1000,1000,1000],resolution=None,unit='rad*pixel',poisson=False,xrdata=None):
+    def __init__(self, dims=[1000, 1000, 1000], resolution=None,
+                 unit='rad*pixel', poisson=False, xrdata=None):
         ''' Initialize object.
             dimensions are the dimensions of the object.
             Note: the object is not initialized in memory until
                 asked for.
-            The default is [1000,1000,1000] but this could change in the future.
+            The default is [1000,1000,1000] but this could change in the
+            future.
             resolution - the resolution (in m) per pixel
                 (resolution = 1 sets units to be pixels)
         xrdata : an xray data object. Must contain the following:
@@ -40,10 +41,10 @@ class Shape3:
         if resolution is None:
             resolution = 1.
 
-
         if xrdata is not None:
             # need to compute dims res etc
-            self.N, self.IMGQBOX = self.getNQBOX(xrdata.dims,xrdata.x0,xrdata.y0)
+            self.N, self.IMGQBOX = self.getNQBOX(xrdata.dims, xrdata.x0,
+                                                 xrdata.y0)
             self.dims = [self.N, self.N, self.N]
             self.resolution = self.getresolution(xrdata.qperpixel, self.N)
             self.x0 = xrdata.x0
@@ -62,14 +63,13 @@ class Shape3:
         self.typebboxes = None
         self.set_size(self.dims, self.resolution, self.unit)
 
-
         # The positions and type of each unit
-        self.vecs = np.array([],dtype=float).reshape(0,3)
-        self.types = np.array([],dtype=int)
+        self.vecs = np.array([], dtype=float).reshape(0, 3)
+        self.types = np.array([], dtype=int)
 
         # just so that inheriting classes can keep track of elements they add
         # (clear units shifts things around)
-        self.ids = np.array([],dtype=int)
+        self.ids = np.array([], dtype=int)
 
         # number of subunits
         self.notypes = 0
@@ -82,9 +82,9 @@ class Shape3:
         # temporary stuff
         self.curtype = -1
 
-    def getNQBOX(self, DIMS,XCEN,YCEN,N=None):
-        ''' Get the square dimensions and the subselection of the box
-            for the simulation necessary.
+    def getNQBOX(self, DIMS, XCEN, YCEN, N=None):
+        ''' Get the square dimensions and the subselection of the box for the
+            simulation necessary.
             Y are rows and X are columns
         '''
         N = np.max(DIMS)*2
@@ -94,11 +94,13 @@ class Shape3:
         # TODO : Need to double check center not off by 1
         # the corner location of data in simulation
         CORNERX_data, CORNERY_data = -XCEN, -YCEN
-        #CORNERX_sim, CORNERY_sim = N//4, N//4
+        # CORNERX_sim, CORNERY_sim = N//4, N//4
         # then reshift to origin of simulation
 
-        IMGQBOX = np.array([CORNERX_data + XCEN_sim, CORNERX_data + XCEN_sim + DIMS[1],
-                            CORNERY_data + YCEN_sim, CORNERY_data + YCEN_sim + DIMS[0]])
+        IMGQBOX = np.array([CORNERX_data + XCEN_sim,
+                            CORNERX_data + XCEN_sim + DIMS[1],
+                            CORNERY_data + YCEN_sim,
+                            CORNERY_data + YCEN_sim + DIMS[0]])
 
         return N, IMGQBOX
 
@@ -110,8 +112,8 @@ class Shape3:
 
     def getscat(self):
         if self.IMGQBOX is not None:
-            x0,x1,y0,y1 = self.IMGQBOX.astype(int)
-            return self.fimg2[y0:y1,x0:x1]
+            x0, x1, y0, y1 = self.IMGQBOX.astype(int)
+            return self.fimg2[y0:y1, x0:x1]
         else:
             return self.fimg2
 
@@ -120,8 +122,8 @@ class Shape3:
             Note : this is the complex field
         '''
         if self.IMGQBOX is not None:
-            x0,x1,y0,y1 = self.IMGQBOX.astype(int)
-            return self.fimg[y0:y1,x0:x1]
+            x0, x1, y0, y1 = self.IMGQBOX.astype(int)
+            return self.fimg[y0:y1, x0:x1]
         else:
             return self.fimg
 
@@ -143,20 +145,20 @@ class Shape3:
         # temporary stuff
         self.typeimg = None
 
-        #ideally we should have a qperpixel in x y and z
+        # ideally we should have a qperpixel in x y and z
         # but let's assume cube units (square pixels etc)
         N = dims[0]
         self.qperpixel = 2*np.pi/N/resolution
         self.xperpixel = resolution
 
-    def set_resolution(self,resolution):
+    def set_resolution(self, resolution):
         if resolution is not None:
             self.set_size(self.dims, resolution, self.unit)
 
     def clearunits(self):
         ''' Clear just the units (not the types).'''
-        self.vecs = np.array([],dtype=float).reshape(0,3)
-        self.types = np.array([],dtype=int)
+        self.vecs = np.array([], dtype=float).reshape(0, 3)
+        self.types = np.array([], dtype=int)
 
     def addtype(self, shapefn, shapeparams, bboxdims=None):
         ''' Add another shape type. Returns the number of this type.'''
@@ -164,8 +166,8 @@ class Shape3:
         self.typefns.append(shapefn)
         self.typeparams.append(shapeparams)
         self.typebboxes.append(bboxdims)
-    
-    def addunits(self, vecs, typeno=None, avoidance = None):
+
+    def addunits(self, vecs, typeno=None, avoidance=None):
         ''' Add a unit
             vecs : 3D position vectors (can also just be one vector)
                 - can also be another Shape3 with vectors
@@ -175,16 +177,18 @@ class Shape3:
                 this is the last type that was defined.
             types are 0 based indexed. notypes is always max(types)+1
             2. This is slow. It is assumed that adding vecs is not something
-                done often. It will recreate a numpy array for the vectors each time.
-                If you need to speed this up, use a buffer (double memory usage
-                every time it fills up)
-            avoidance : if not None, make sure element has nothing in a sphere of this element in the way
-                if there is conflict with at least one element, do not place any of the elements
-                if avoidance is negative, then place all vectors
+                done often. It will recreate a numpy array for the vectors each
+                time.  If you need to speed this up, use a buffer (double
+                memory usage every time it fills up)
+            avoidance : if not None, make sure element has nothing in a sphere
+                of this element in the way if there is conflict with at least
+                one element, do not place any of the elements if avoidance is
+                negative, then place all vectors
             return number of elements placed or -1 for cancellation
 
-            About projection : The function is converted into pixels at the projection step.
-                So all vectors are in the units specified until the projection.
+            About projection : The function is converted into pixels at the
+                projection step.  So all vectors are in the units specified
+                until the projection.
         '''
         if isinstance(vecs, Shape3):
             ''' Can take another shape, if so use its vecs.'''
@@ -200,47 +204,51 @@ class Shape3:
             vecs = np.array([vecs])
         elif(len(vecs.shape) == 2):
             if(vecs.shape[1] != 3):
-                raise ValueError("The vector is not a list of 3 elements or a list of lists of 3 elements")
+                msg = "The vector is not a list of 3 elements " +\
+                        "or a list of lists of 3 elements"
+                raise ValueError(msg)
         vecs = np.array(vecs)
-        typenos = np.tile(typeno,vecs.shape[0])
+        typenos = np.tile(typeno, vecs.shape[0])
 
         if avoidance is not None:
-            #check overlap
+            # check overlap
             if avoidance < 0:
                 checkall = True
             else:
                 checkall = False
-            overlaps = self.overlapping(self.vecs,vecs,np.abs(avoidance),checkall=checkall)
+            overlaps = self.overlapping(self.vecs, vecs, np.abs(avoidance),
+                                        checkall=checkall)
             if(overlaps == -1):
                 return -1
-            elif(overlaps != 0 and isinstance(overlaps,list)):
-                # this means we checked but returned the overlapping vecs, ignore them
-                vecs = vecs[overlaps,:]
+            elif(overlaps != 0 and isinstance(overlaps, list)):
+                # this means we checked but returned the overlapping vecs,
+                # ignore them
+                vecs = vecs[overlaps, :]
 
         # the slow piece
         N0 = self.vecs.shape[0]
-        self.ids = np.concatenate((self.ids,np.arange(N0,N0+vecs.shape[0]+1)))
-        self.vecs = np.concatenate((self.vecs,vecs))
-        self.types = np.concatenate((self.types,typenos))
+        self.ids = np.concatenate((self.ids,
+                                   np.arange(N0, N0 + vecs.shape[0] + 1)))
+        self.vecs = np.concatenate((self.vecs, vecs))
+        self.types = np.concatenate((self.types, typenos))
         # reorder in terms of types (will help make projection faster)
         vecsorder = np.argsort(self.types)
         self.vecs = self.vecs[vecsorder]
         self.types = self.types[vecsorder]
         self.ids = self.ids[vecsorder]
 
-
-    def overlapping(self, vecs1, vecs2, radius,checkall=False):
+    def overlapping(self, vecs1, vecs2, radius, checkall=False):
         ''' Check if any of vecs2 are overlapping with any of vecs1.'''
         overlaps = list()
         for i, vec1 in enumerate(vecs1):
             for j, vec2 in enumerate(vecs2):
                 vdiff = vec2-vec1
                 if(vdiff[0]**2 + vdiff[1]**2 + vdiff[2]**2 < radius**2):
-                    #there is overlap
+                    # there is overlap
                     if(checkall is False):
                         return -1
                     else:
-                        overlaps.append(j)    
+                        overlaps.append(j)
         if checkall:
             return overlaps
         else:
@@ -250,7 +258,7 @@ class Shape3:
         ''' Project the units onto a 2D image. The convention
             is to project onto the x-y plane.'''
         if self.img is None:
-            self.img = np.zeros((self.dims[1], self.dims[0]),dtype=complex)
+            self.img = np.zeros((self.dims[1], self.dims[0]), dtype=complex)
         else:
             self.clearimg(self.img)
         curtype = -1
@@ -260,14 +268,16 @@ class Shape3:
                 self.switchtype(typeno)
             # project vector onto z, round, project current type stored
             # removed + .5 in position (not sure why it was there?)
-            self.projecttype((np.array(vec[:2])/self.resolution + self.dim2D/2.).astype(int))
+            self.projecttype((np.array(vec[:2])/self.resolution +
+                              self.dim2D/2.).astype(int))
         self.fimg = np.fft.fftshift(np.fft.fft2(self.img))
         self.fimg2 = np.abs(self.fimg)**2
 
     def switchtype(self, typeno):
         curtype = self.curtype
         if(self.typeimg is None):
-            self.typeimg = np.zeros((self.dims[1],self.dims[0]),dtype=complex)
+            self.typeimg = np.zeros((self.dims[1], self.dims[0]),
+                                    dtype=complex)
         if curtype >= 0:
             self.clearimg(self.typeimg, bboxdims=self.typebboxes[curtype])
         self.curtype = typeno
@@ -275,20 +285,20 @@ class Shape3:
         self.gentype(typeno)
 
     def transform3D(self, tranmat):
-        ''' Transform the 3D vectors according the transformation 
+        ''' Transform the 3D vectors according the transformation
             matrix.'''
-        #tvecs = np.array(vecs)*0;
+        # tvecs = np.array(vecs)*0;
         tranmat = np.array(tranmat)
-        self.vecs = np.tensordot(self.vecs,tranmat,axes=(1,1))
+        self.vecs = np.tensordot(self.vecs, tranmat, axes=(1, 1))
 
     def center(self):
         ''' Center object. Shift vectors by center.'''
-        COM = np.average(self.vecs,axis=0)
+        COM = np.average(self.vecs, axis=0)
         self.translate3D(-COM)
 
-    def rotz(self,phi):
+    def rotz(self, phi):
         ''' Rotate about the z axis (in projection plane).'''
-        rotmat = rotmat3D(phi,axis=3)
+        rotmat = rotmat3D(phi, axis=3)
         self.transform3D(rotmat)
 
     def roty(self,phi):
