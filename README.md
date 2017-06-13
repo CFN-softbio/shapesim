@@ -33,6 +33,13 @@ Meso-structures Lhermitte, J. R., Stein, A., Tian, C., Zhang, Y.,
 Wiegart, L., Fluerasu, A., Gang, O. and Yager, K. G. 
 ```
 
+Note : the actual code used to generate the simulated scattering is very
+simple (abs(fft(img))^2). This code was more meant to be fast and
+flexible, leading to more easily reproducible Monte-Carlo simulations.
+It is recommended you first try simulating your own patterns yourself by
+creating a density map and just running the transformation mentioned
+here.
+
 
 Example:
 ```python
@@ -57,3 +64,5 @@ In [6]: shp.rotz(.1)
 # need to project again
 In [7]: shp.project()
 ```
+
+More examples to be added later...
