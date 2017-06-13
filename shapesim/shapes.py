@@ -301,43 +301,45 @@ class Shape3:
         rotmat = rotmat3D(phi, axis=3)
         self.transform3D(rotmat)
 
-    def roty(self,phi):
+    def roty(self, phi):
         ''' Rotate about the x axis (in projection plane).'''
-        rotmat = rotmat3D(phi,axis=2)
+        rotmat = rotmat3D(phi, axis=2)
         self.transform3D(rotmat)
 
-    def rotx(self,phi):
+    def rotx(self, phi):
         ''' Rotate about the y axis (in projection plane).'''
-        rotmat = rotmat3D(phi,axis=1)
+        rotmat = rotmat3D(phi, axis=1)
         self.transform3D(rotmat)
 
     def translate3D(self, vec):
         ''' Translate the 3D vectors according the translation vector.'''
-        #tvecs = np.array(vecs)*0;
+        # tvecs = np.array(vecs)*0;
         vec = np.array(vec)
-        self.vecs += vec[np.newaxis,:]
-        
+        self.vecs += vec[np.newaxis, :]
+
     def gentype(self, typeno):
         ''' Make the temporary type specified by the typeno.'''
         curbbox = np.array(self.typebboxes[typeno]).astype(int)
         # project sphere onto the image
-        self.typefns[typeno](self.typeimg,*(self.typeparams[typeno]),bboxdims=curbbox,resolution=self.resolution)
-       
-    def projecttype(self, r): 
-        ''' Project the current type in the class to the image at the position specified.
-            bbox indexing is left biased: [-bd[0]//2, (bd[0]-1)//2]
+        self.typefns[typeno](self.typeimg, *(self.typeparams[typeno]),
+                             bboxdims=curbbox, resolution=self.resolution)
+
+    def projecttype(self, r):
+        ''' Project the current type in the class to the image at the position
+            specified.  bbox indexing is left biased: [-bd[0]//2, (bd[0]-1)//2]
         '''
         bd = np.array(self.typebboxes[self.curtype]).astype(int)
         # xleft, yleft, xright, yright
         bboxtype = [0, 0, bd[0]-1, bd[1]-1]
-        bboximg = [r[0] - bd[0]//2, r[1] - bd[1]//2, r[0] + (bd[0]-1)//2, r[1] + (bd[1]-1)//2]
-        #bounds check (need to speed this up later)
+        bboximg = [r[0] - bd[0]//2, r[1] - bd[1]//2,
+                   r[0] + (bd[0]-1)//2, r[1] + (bd[1]-1)//2]
+        # bounds check (need to speed this up later)
 
         # x check, check min is in bounds
         if(bboximg[0] < 0):
             bboxtype[0] -= bboximg[0]
             bboximg[0] = 0
-            
+
         if(bboximg[0] >= self.img.shape[1]):
             # out of bounds so don't plot
             return
@@ -346,7 +348,7 @@ class Shape3:
         if(bboximg[2] < 0):
             # out of bounds so don't plot
             return
-            
+
         if(bboximg[2] >= self.img.shape[1]):
             bboxtype[2] -= (bboximg[2] - (self.img.shape[1]-1))
             bboximg[2] = self.img.shape[1] - 1
@@ -355,7 +357,7 @@ class Shape3:
         if(bboximg[1] < 0):
             bboxtype[1] -= bboximg[1]
             bboximg[1] = 0
-            
+
         if(bboximg[1] >= self.img.shape[0]):
             # out of bounds so don't plot
             return
@@ -364,28 +366,31 @@ class Shape3:
         if(bboximg[3] < 0):
             # out of bounds so don't plot
             return
-            
+
         if(bboximg[3] >= self.img.shape[0]):
             bboxtype[3] -= (bboximg[3] - (self.img.shape[0]-1))
             bboximg[3] = self.img.shape[0] - 1
 
-        #during check, it's possible that the type box bounds are empty, check:
+        # during check, it's possible that the type box bounds are empty,
+        # check:
         if(bboxtype[0] >= bboxtype[2] or bboxtype[1] >= bboxtype[3]):
             return
-        
-        if(bboximg[0] != bboximg[2] and bboximg[1] != bboximg[3]):
-            self.img[bboximg[1]:bboximg[3]+1,bboximg[0]:bboximg[2]+1] += self.typeimg[bboxtype[1]:bboxtype[3]+1,bboxtype[0]:bboxtype[2]+1]
 
+        if(bboximg[0] != bboximg[2] and bboximg[1] != bboximg[3]):
+            typimgtmp = self.typeimg[bboxtype[1]:bboxtype[3]+1,
+                                     bboxtype[0]:bboxtype[2]+1]
+            self.img[bboximg[1]:bboximg[3]+1,
+                     bboximg[0]:bboximg[2]+1] += typimgtmp
 
     def plotbbox(self, vecno):
         ''' Plot an image with the bounding box of the vector highlighted
             based on the vector number vecno
-            Not implemented but the aim is to find which element a vector designates.
-            Will project in 2D.
+            Not implemented but the aim is to find which element a vector
+            designates.  Will project in 2D.
         '''
         pass
 
-    def clearimg(self,img,bboxdims=None):
+    def clearimg(self, img, bboxdims=None):
         ''' Clear the last projected shape.
             Note: setting bboxdims speeds things up.
             Set bboxdims = None to clear the whole image.
@@ -397,71 +402,89 @@ class Shape3:
             img[:bboxdims[0], :bboxdims[1]] = 0
 
     def get2Dvecs(self):
-        # return the 2D vecs for the hex lattice (useful for generating coordinates)
-        return self.vecs[:,:2]
+        # return the 2D vecs for the hex lattice (useful for generating
+        # coordinates)
+        return self.vecs[:, :2]
+
 
 class Shape3Spheres(Shape3):
     ''' A Shape3 but where the generating function is always the same type.'''
-    def __init__(self,radius,rho=1.,dims=[1000,1000,1000],resolution=None,unit='rad*pixel',avoidance=None,bboxdims=None,**kwargs):
+    def __init__(self, radius, rho=1., dims=[1000, 1000, 1000],
+                 resolution=None, unit='rad*pixel', avoidance=None,
+                 bboxdims=None, **kwargs):
         ''' like shape3 but new parameter is the radius of the sphere.'''
         if resolution is None:
             resolution = 1.
-        super(Shape3Spheres,self).__init__(dims=dims, resolution=resolution, unit=unit,**kwargs)
+        super(Shape3Spheres, self).__init__(dims=dims, resolution=resolution,
+                                            unit=unit, **kwargs)
         if bboxdims is None:
             bboxcutoff = 2*(int(radius/resolution)+4)
             bboxdims = [bboxcutoff, bboxcutoff]
         self.rho = rho
-        self.addtype(sphereprojfn,(radius,rho, 0., 0., 0.),bboxdims=bboxdims)
+        self.addtype(sphereprojfn,
+                     (radius, rho, 0., 0., 0.), bboxdims=bboxdims)
+
 
 class Shape3Gausses(Shape3):
     ''' A Shape3 but where the generating function is always the same type.'''
-    def __init__(self,radius,rho=1.,dims=[1000,1000,1000],resolution=None,unit='rad*pixel',avoidance=None,bboxdims=None,**kwargs):
+    def __init__(self, radius, rho=1., dims=[1000, 1000, 1000],
+                 resolution=None, unit='rad*pixel', avoidance=None,
+                 bboxdims=None, **kwargs):
         ''' like shape3 but new parameter is the radius of the sphere.'''
         if resolution is None:
             resolution = 1.
-        super(Shape3Gausses,self).__init__(dims=dims, resolution=resolution, unit=unit,**kwargs)
+        super(Shape3Gausses, self).__init__(dims=dims, resolution=resolution,
+                                            unit=unit, **kwargs)
         if bboxdims is None:
             # go 3 sigma
             bboxcutoff = 3*(int(radius/resolution)+4)
             bboxdims = [bboxcutoff, bboxcutoff]
         self.rho = rho
-        self.addtype(gaussprojfn,(radius,rho, 0., 0., 0.),bboxdims=bboxdims)
+        self.addtype(gaussprojfn,
+                     (radius, rho, 0., 0., 0.), bboxdims=bboxdims)
 
 
 class Shape3Superballs(Shape3):
     ''' A Shape3 but where the generating function is always the same type.
-        Added a dummy param so it accepts same number of args as other functions
-            (should fix this later).
+        Added a dummy param so it accepts same number of args as other
+        functions (should fix this later).
     '''
-    def __init__(self,radius, p, dummy=None, rho=1.,dims=[1000,1000,1000],resolution=None,unit='rad*pixel',bboxdims=None,avoidance=None, **kwargs):
+    def __init__(self, radius, p, dummy=None, rho=1., dims=[1000, 1000, 1000],
+                 resolution=None, unit='rad*pixel', bboxdims=None,
+                 avoidance=None, **kwargs):
         ''' like shape3 but new parameter is the radius of the superball.
-            p - the superball factor p -> inf is a perfect square, p down to 2 is a rounded square
+            p - the superball factor p -> inf is a perfect square, p down to 2
+            is a rounded square
         '''
         if resolution is None:
             resolution = 1.
-        super(Shape3Superballs,self).__init__(dims=dims, resolution=resolution, unit=unit,**kwargs)
+        super(Shape3Superballs, self).__init__(dims=dims,
+                                               resolution=resolution,
+                                               unit=unit, **kwargs)
         if bboxdims is None:
             bboxcutoff = 4*(int(radius/self.resolution)+1)
             bboxdims = [bboxcutoff, bboxcutoff]
             self.bboxdims = None
-            print("bboxdims {} radius {} res {}".format(bboxdims,radius, resolution))
+            print("bboxdims {} radius {} res {}".format(bboxdims, radius,
+                                                        resolution))
         else:
             # keep bbox dims fixed
             self.bboxdims = bboxdims
-        self.ld = radius #effective distance from center
+        self.ld = radius  # effective distance from center
         if avoidance is None:
             avoidance = -1
         self.avoidance = avoidance
         self.p = p
         self.radius = radius
         self.rho = rho
-        self.addtype(superballprojfn,(radius,p,rho, 0., 0., 0.),bboxdims=bboxdims)
+        self.addtype(superballprojfn,
+                     (radius, p, rho, 0., 0., 0.), bboxdims=bboxdims)
         self.avoidance = avoidance
 
-    def addsuperball(self, vec0,r,p,phi=0.,rho=1.):
+    def addsuperball(self, vec0, r, p, phi=0., rho=1.):
         ''' add a superball.
             vec0 : position
-            r : 'radius' 
+            r : 'radius'
             p : superball factor
             phi : orientation
         '''
@@ -470,7 +493,8 @@ class Shape3Superballs(Shape3):
             bboxdims = [bboxcutoff, bboxcutoff]
         else:
             bboxdims = self.bboxdims
-        self.addtype(superballprojfn,(r,p,rho,phi,0., 0.),bboxdims=bboxdims)
+        self.addtype(superballprojfn,
+                     (r, p, rho, phi, 0., 0.), bboxdims=bboxdims)
         avoidance = self.avoidance
         if avoidance > 0:
             # first check no overlap
@@ -481,6 +505,7 @@ class Shape3Superballs(Shape3):
                     # exit because it is overlapping
                     return -1
         self.addunits(vec0)
+
 
 class Shape3Ellipses(Shape3):
     ''' A Shape3 but where the generating function is always the same type.'''
@@ -1183,7 +1208,7 @@ class HexLattice3Spheres(Shape3Spheres):
         vecs1 = [[0,0,0]]
         # the hex part
         vecs2 = [[.5*np.sqrt(3),.5,0]]
-        
+
         vecx = np.array([0.,1.,0])
         vecy = np.array([np.sqrt(3), 0, 0])
         vecz = np.array([0,0,1.])
@@ -1230,7 +1255,7 @@ class CubicLattice3Spheres(Shape3Spheres):
         super(CubicLattice3Spheres, self).clearunits()
         self.Cubevecs = np.array([]).reshape(0,3)
         self.Cubetypes = []
-        
+
 
     def reset(self):
         self.initialize()
@@ -1249,7 +1274,7 @@ class CubicLattice3Spheres(Shape3Spheres):
 
         #sub basis
         vecs = np.array([[0,0,0]])
-        
+
         vecx = np.array([1., 0, 0])
         vecy = np.array([0., 1, 0])
         vecz = np.array([0., 0, 1])
@@ -1265,17 +1290,17 @@ class CubicLattice3Spheres(Shape3Spheres):
         vecs = cubevecs*distance
         vecs += vec0
         self.addunits(vecs)
- 
+
 
 # Some shape generating functions, will eventually be written in cython
 def sphereprojfn(img, r, rho, alpha, beta, gamma, bboxdims=None,resolution=1.,off=None):
     ''' Draw the projection of a sphere.
         will be drawn in center of bounding box
         r - radius
-        rho - density 
+        rho - density
         img - image to project to
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
@@ -1298,7 +1323,7 @@ def sphereprojfn(img, r, rho, alpha, beta, gamma, bboxdims=None,resolution=1.,of
         rcen = np.array([bd[0]/2.+off[0], bd[1]/2.+off[1]])
     else:
         rcen = np.array([bd[0]/2., bd[1]/2.])
-    
+
 
     x = np.arange(bd[0])
     y = np.arange(bd[1])
@@ -1310,10 +1335,10 @@ def gaussprojfn(img, r, rho, alpha, beta, gamma, bboxdims=None,resolution=1.):
     ''' Draw the projection of a sphere.
         will be drawn in center of bounding box
         r - radius (treated as the sigma)
-        rho - density 
+        rho - density
         img - image to project to
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
@@ -1349,7 +1374,7 @@ def annuliprojfn(img, r0, dr1, dr2, n, height, sigmar, sigmadr, rho, alpha, beta
         rho - density
         img - image to project to
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
@@ -1400,7 +1425,7 @@ def fresnelprojfn(img, rs, drs, height, sigmar, sigmadr, rho, alpha, beta, gamma
         rho - density
         img - image to project to
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
@@ -1505,10 +1530,10 @@ def cylindershellsprojfn(img, r0, dr1, dr2, n, height, rho, alpha, beta, gamma, 
         dr1 - thickness of annulus
         dr2 - spacing between annuli
         n - number to draw
-        rho - density 
+        rho - density
         img - image to project to
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
@@ -1550,15 +1575,15 @@ def cylindershellsprojfn(img, r0, dr1, dr2, n, height, rho, alpha, beta, gamma, 
         img[:bd[1],:bd[0]] += rhor*((1-((r-r00)/(dr1+drr))**2) > 0)
 
 def ellipseprojfn(img, ra, rb, rho, alpha, beta, gamma, bboxdims=None,resolution=1.):
-    ''' Draw the projection of an ellipse 
+    ''' Draw the projection of an ellipse
         will be drawn in center of bounding box
         ra - semimajor axis
         rb - semiminor axis
-        rho - density 
+        rho - density
         img - image to project to
         alpha - the tilt of the ellipse
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
@@ -1606,11 +1631,11 @@ def cylinderprojfn(img, r, L, rho, alpha, beta, gamma, bboxdims=None,resolution=
 
         r - radius
         L - length
-        rho - density 
+        rho - density
         img - image to project to
         alpha - the tilt of the ellipse
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
@@ -1658,10 +1683,10 @@ def superballprojfn(img, r, p, rho, alpha, beta, gamma, bboxdims=None,resolution
         will be drawn in center of bounding box
         r - radius
         p - superball parameter (p=1 is sphere)
-        rho - density 
+        rho - density
         img - image to project to
 
-        Bounding box details: for bounding boxes with even number of dimensions, the central 
+        Bounding box details: for bounding boxes with even number of dimensions, the central
             pixel selected is ambiguous. I choose a left biased system:
             [x0 - (dx-1)//2, x0 + dx//2]
         The motivation for having it centered on a pixel is to that it registers with the original image
