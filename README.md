@@ -19,8 +19,6 @@ the displacements in the longitudinal direction are large, you will see
 effects from qz even though |qz| is much smaller than |qx| or |qy| (ref
 [2]).
 
-This code has been used for the simulation for the following
-publications:
 ```
 [1] Angular Correlations:
 Lhermitte, J. R., Tian, C., Stein, A., Rahman, A., Zhang, Y., Wiegart,
