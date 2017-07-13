@@ -26,9 +26,9 @@ L., Fluerasu, A., Gang, O. & Yager, K. G. (2017). J. Appl. Crystallogr.
 50. DOI : 10.1107/S160057671700394610.1107/S1600576717003946
 
 [2] X-ray Amplification:
-(accepted) Coherent Amplification of X-ray Scattering from
-Meso-structures Lhermitte, J. R., Stein, A., Tian, C., Zhang, Y.,
-Wiegart, L., Fluerasu, A., Gang, O. and Yager, K. G. 
+Coherent Amplification of X-ray Scattering from Meso-structures Lhermitte, J.
+R., Stein, A., Tian, C., Zhang, Y., Wiegart, L., Fluerasu, A., Gang, O. and
+Yager, K. G. IuCrJ 4.5 (2017). DOI: https://doi.org/10.1107/S2052252517008107
 ```
 
 Note : the actual code used to generate the simulated scattering is very
